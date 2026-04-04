@@ -1,11 +1,19 @@
 from flask import Flask, request, jsonify, render_template
 import os
-from predict import predict_audio
+
+try:
+    from predict import predict_audio
+except ModuleNotFoundError as exc:
+    if exc.name != "predict":
+        raise
+    from backend.predict import predict_audio
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(
     __name__,
-    template_folder="../frontend/templates",
-    static_folder="../frontend/static"
+    template_folder=os.path.join(BASE_DIR, "..", "frontend", "templates"),
+    static_folder=os.path.join(BASE_DIR, "..", "frontend", "static")
 )
 
 ALLOWED_EXTENSIONS = {"wav", "mp3"}
@@ -13,7 +21,7 @@ ALLOWED_EXTENSIONS = {"wav", "mp3"}
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
-UPLOAD_FOLDER = "uploads"
+UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 
@@ -66,7 +74,10 @@ def upload_audio():
     file_path = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(file_path)
 
-    label, confidence = predict_audio(file_path)
+    try:
+        label, confidence = predict_audio(file_path)
+    except Exception as exc:
+        return jsonify({"error": f"Prediction failed: {str(exc)}"}), 500
 
     return jsonify({
         "prediction": label,
