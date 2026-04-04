@@ -1,163 +1,199 @@
 # Deepfake Audio Detection
 
-A Flask-based backend API for detecting deepfake audio files using machine learning.
+Full-stack Flask application for detecting fake vs real audio using ML models, with Firebase authentication and a private user dashboard.
 
 ## Features
 
-- Audio file upload (WAV, MP3 formats)
-- RESTful API endpoints
-- Audio processing with librosa
-- Machine learning classification support
+- Deepfake audio prediction for WAV and MP3 files
+- Modern web UI served by Flask (home, login, detector)
+- Firebase authentication:
+   - Email and password sign-in/sign-up
+   - Google sign-in
+- Session controls:
+   - User is logged out when leaving the detector page
+   - User is logged out when returning to home page
+   - Session is browser-session based
+- Per-user dashboard history on detector page
+   - Each signed-in user sees only their own analysis history
 
 ## Project Structure
 
-```
+```text
 deepfake_audio_detection/
 ├── backend/
-│   ├── app.py              # Flask application
-│   ├── requirements.txt    # Python dependencies
-│   ├── model/             # ML model directory
-│   └── uploads/           # Uploaded audio files
+│   ├── app.py
+│   ├── predict.py
+│   ├── train_model.py
+│   ├── train_models.py
+│   ├── extract_features.py
+│   ├── requirements.txt
+│   ├── models/
+│   ├── features/
+│   ├── preprocessing/
+│   └── uploads/
+├── dataset/
+├── frontend/
+│   ├── static/
+│   │   ├── style.css
+│   │   └── auth.js
+│   └── templates/
+│       ├── home.html
+│       ├── login.html
+│       └── index.html
 └── README.md
 ```
 
-## Prerequisites
+## Requirements
 
-- Python 3.8 or higher
-- Virtual environment (recommended)
+- Python 3.10+
+- Virtual environment recommended
+- Firebase project with Auth enabled
 
-## Installation
+## Local Setup
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd deepfake_audio_detection
-   ```
+1. Clone and open project
 
-2. **Create and activate virtual environment**
-   ```bash
-   # Windows
-   python -m venv venv
-   venv\Scripts\activate
-
-   # Linux/Mac
-   python3 -m venv venv
-   source venv/bin/activate
-   ```
-
-3. **Install dependencies**
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   ```
-
-## Usage
-
-1. **Start the Flask server**
-   ```bash
-   cd backend
-   python app.py
-   ```
-   
-   The server will run on `http://127.0.0.1:5000` by default.
-
-2. **Test the API**
-   
-   **Home endpoint:**
-   ```bash
-   curl http://127.0.0.1:5000/
-   ```
-
-   **Upload audio file:**
-   ```bash
-   # Windows PowerShell
-   curl.exe -X POST -F "file=@path/to/audio.mp3" http://127.0.0.1:5000/upload
-   
-   # Or using PowerShell cmdlet
-   $filePath = "path\to\audio.mp3"
-   Invoke-WebRequest -Uri http://127.0.0.1:5000/upload -Method POST -Form @{file = Get-Item -Path $filePath}
-   ```
-
-## API Endpoints
-
-### GET /
-Returns a welcome message confirming the server is running.
-
-**Response:**
+```bash
+git clone <repository-url>
+cd deepfake_audio_detection
 ```
-Deepfake Audio Detection Backend is Running!
+
+2. Create and activate virtual environment
+
+```bash
+# Windows
+python -m venv venv
+venv\Scripts\activate
+
+# Linux/macOS
+python3 -m venv venv
+source venv/bin/activate
 ```
+
+3. Install dependencies
+
+```bash
+cd backend
+pip install -r requirements.txt
+```
+
+4. Configure Firebase (recommended via environment variables)
+
+```bash
+# Windows PowerShell example
+$env:FIREBASE_API_KEY="<your-key>"
+$env:FIREBASE_AUTH_DOMAIN="<your-project>.firebaseapp.com"
+$env:FIREBASE_PROJECT_ID="<your-project-id>"
+$env:FIREBASE_STORAGE_BUCKET="<your-bucket>"
+$env:FIREBASE_MESSAGING_SENDER_ID="<sender-id>"
+$env:FIREBASE_APP_ID="<app-id>"
+$env:FIREBASE_MEASUREMENT_ID="<measurement-id>"   # optional
+```
+
+5. Run the app
+
+```bash
+python app.py
+```
+
+App runs at:
+
+`http://127.0.0.1:5000`
+
+## Routes
+
+- `GET /` -> Home page
+- `GET /login` -> Sign-in/sign-up page
+- `GET /detector` -> Auth-protected detector page
+- `POST /upload` -> Audio analysis endpoint
+
+## API
 
 ### POST /upload
-Upload an audio file for processing.
 
-**Parameters:**
-- `file`: Audio file (WAV or MP3 format)
+Uploads and analyzes one audio file.
 
-**Success Response:**
+Request:
+- `multipart/form-data`
+- field name: `file`
+- supported: `.wav`, `.mp3`
+
+Success response example:
+
 ```json
 {
-  "message": "Audio file uploaded successfully",
-  "file_path": "uploads/filename.mp3"
+   "prediction": "FAKE",
+   "confidence": "92.41%"
 }
 ```
 
-**Error Responses:**
+Error response example:
+
 ```json
 {
-  "error": "No file part"
-}
-```
-```json
-{
-  "error": "No selected file"
-}
-```
-```json
-{
-  "error": "Invalid file format"
+   "error": "Only WAV and MP3 supported"
 }
 ```
 
-## Supported Audio Formats
+## Firebase Auth Setup Checklist
 
-- WAV (.wav)
-- MP3 (.mp3)
+In Firebase Console:
 
-## Dependencies
+1. Enable Authentication
+2. Enable `Email/Password` provider
+3. Enable `Google` provider
+4. Add your app domains to Authorized domains:
+    - `localhost`
+    - deployed domain (for production)
 
-Key libraries:
-- **Flask**: Web framework
-- **librosa**: Audio analysis
-- **scikit-learn**: Machine learning
-- **soundfile**: Audio file I/O
-- **numpy**: Numerical computing
+## Deployment
 
-See `backend/requirements.txt` for complete list.
+This app can be deployed as a single Flask service (frontend is server-rendered templates).
 
-## Development
+### Option A: Render / Railway / similar
 
-### Debug Mode
-The application runs in debug mode by default, which:
-- Enables auto-reload on code changes
-- Provides detailed error messages
-- Should NOT be used in production
+- Root directory: `backend`
+- Build command:
 
-### Production Deployment
-For production, use a WSGI server like Gunicorn:
 ```bash
-pip install gunicorn
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
+pip install -r requirements.txt
 ```
 
-## License
+- Start command:
 
-[Add your license here]
+```bash
+gunicorn app:app
+```
 
-## Contributing
+- Set environment variables:
+   - `FIREBASE_API_KEY`
+   - `FIREBASE_AUTH_DOMAIN`
+   - `FIREBASE_PROJECT_ID`
+   - `FIREBASE_STORAGE_BUCKET`
+   - `FIREBASE_MESSAGING_SENDER_ID`
+   - `FIREBASE_APP_ID`
+   - `FIREBASE_MEASUREMENT_ID` (optional)
 
-[Add contribution guidelines here]
+### Option B: VPS (Ubuntu example)
 
-## Authors
+1. Install Python and dependencies
+2. Create virtual environment and install requirements
+3. Run with gunicorn behind nginx
+4. Configure HTTPS with certbot
+
+Gunicorn example:
+
+```bash
+cd backend
+gunicorn -w 2 -b 0.0.0.0:5000 app:app
+```
+
+## Notes
+
+- `uploads/` is used for temporary file handling. Configure storage/cleanup policy for production.
+- Use environment variables for Firebase config in production.
+- Do not run Flask debug mode in production.
+
+## Author
 
 GOBIKA R
