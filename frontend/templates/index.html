@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DetectAI — Deepfake Audio Detector</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script id="firebase-config" type="application/json">{{ firebase_config | tojson }}</script>
+  <script>
+    window.FIREBASE_CONFIG = JSON.parse(document.getElementById("firebase-config").textContent);
+  </script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</head>
+
+<body>
+
+<div id="background"></div>
+
+<!-- ═══ TOP NAV ═══ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="logo-link">
+      <div class="logo-icon">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <div class="logo-text">
+        <span class="logo-main">DETECT<span class="logo-accent">AI</span></span>
+        <span class="logo-sub">Audio Forensics System</span>
+      </div>
+    </a>
+  </div>
+  <div class="topbar-right">
+    <a href="/" class="nav-pill">Home</a>
+    <span class="user-chip" id="userChip">Loading user...</span>
+    <button type="button" class="nav-pill nav-pill-btn" id="logoutBtn">Logout</button>
+    <div class="status-dot"></div>
+    <span class="status-text">SECURE SESSION</span>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main-wrapper">
+
+  <!-- HERO -->
+  <div class="hero-section">
+    <h1 class="hero-title">Deepfake Audio <span class="highlight">Detection</span></h1>
+    <p class="hero-sub">
+      AI-powered forensic analysis to identify synthetic or manipulated audio with neural precision
+    </p>
+  </div>
+
+  <!-- CARD -->
+  <div class="container">
+
+    <!-- STEP INDICATOR -->
+    <div class="steps">
+      <div class="step active" id="step1">
+        <div class="step-circle"><i class="fas fa-upload"></i></div>
+        <span>Upload</span>
+      </div>
+      <div class="step-line" id="line1"></div>
+      <div class="step" id="step2">
+        <div class="step-circle"><i class="fas fa-microchip"></i></div>
+        <span>Analyze</span>
+      </div>
+      <div class="step-line" id="line2"></div>
+      <div class="step" id="step3">
+        <div class="step-circle"><i class="fas fa-chart-bar"></i></div>
+        <span>Results</span>
+      </div>
+    </div>
+
+    <!-- UPLOAD ZONE -->
+    <div class="upload-zone" id="uploadZone">
+      <div class="upload-icon"><i class="fas fa-cloud-arrow-up"></i></div>
+      <p class="upload-title">Drop your audio file here</p>
+      <p class="upload-sub">Supports .WAV and .MP3 formats &nbsp;·&nbsp; Max 50 MB</p>
+      <label class="file-label" for="audioFile">
+        <i class="fas fa-folder-open"></i> Browse Files
+      </label>
+      <input type="file" id="audioFile" accept=".wav,.mp3" hidden>
+    </div>
+
+    <!-- FILE PREVIEW PANEL -->
+    <div class="preview-card" id="audioContainer">
+      <div class="file-info" id="fileInfo">
+        <i class="fas fa-file-waveform file-icon"></i>
+        <div class="file-details">
+          <span class="file-name" id="fileName">—</span>
+          <span class="file-size" id="fileSize">—</span>
+        </div>
+        <button class="clear-btn" onclick="clearFile()" title="Remove file">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="preview-header">
+        <i class="fas fa-headphones-simple preview-icon"></i>
+        <span class="preview-title">Audio Preview</span>
+      </div>
+      <audio id="audioPlayer" class="preview-player" controls></audio>
+    </div>
+
+    <!-- ANALYZE BUTTON -->
+    <button class="analyze-btn" id="analyzeBtn" onclick="uploadAudio()">
+      <i class="fas fa-magnifying-glass-chart"></i>
+      <span>Run Analysis</span>
+    </button>
+
+    <!-- RESULT -->
+    <div class="result-card" id="result"></div>
+
+  </div>
+
+  <section class="dashboard-panel">
+    <div class="dashboard-head">
+      <h2 class="dashboard-title">Your Analysis Dashboard</h2>
+      <span class="dashboard-sub">Private history linked to your signed-in account</span>
+    </div>
+    <div class="dashboard-table-wrap">
+      <table class="dashboard-table">
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>File</th>
+            <th>Verdict</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+      <p class="dashboard-empty" id="historyEmpty">No analysis yet. Run your first detection above.</p>
+    </div>
+  </section>
+
+  <!-- INFO CARDS -->
+  <div class="info-cards">
+    <div class="info-card">
+      <i class="fas fa-brain info-icon"></i>
+      <div class="info-val">97.4%</div>
+      <div class="info-label">Model Accuracy</div>
+    </div>
+    <div class="info-card">
+      <i class="fas fa-bolt info-icon"></i>
+      <div class="info-val">&lt; 2s</div>
+      <div class="info-label">Analysis Speed</div>
+    </div>
+    <div class="info-card">
+      <i class="fas fa-network-wired info-icon"></i>
+      <div class="info-val">Neural</div>
+      <div class="info-label">Detection Method</div>
+    </div>
+  </div>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <i class="fas fa-lock"></i>&nbsp; Secure &amp; Private — Audio files are never stored
+</footer>
+
+
+<script>
+
+let activeUser = null;
+let leaveLogoutTriggered = false;
+const userChip = document.getElementById("userChip");
+const logoutBtn = document.getElementById("logoutBtn");
+const historyBody = document.getElementById("historyBody");
+const historyEmpty = document.getElementById("historyEmpty");
+
+function logoutWhenLeavingDetector() {
+  if (leaveLogoutTriggered) {
+    return;
+  }
+  leaveLogoutTriggered = true;
+  AppAuth.signOut().catch(() => {
+    // Ignore errors during page teardown.
+  });
+}
+
+window.addEventListener("pagehide", logoutWhenLeavingDetector);
+window.addEventListener("beforeunload", logoutWhenLeavingDetector);
+
+AppAuth.requireAuth("/login");
+AppAuth.onAuthStateChange((user) => {
+  if (!user) {
+    return;
+  }
+  activeUser = user;
+  userChip.textContent = user.email || user.displayName || "Signed in user";
+  renderHistory();
+});
+
+logoutBtn.addEventListener("click", () => {
+  AppAuth.signOutAndRedirect("/login");
+});
+
+/* ─── File Input ─── */
+
+const audioFileInput = document.getElementById("audioFile");
+const uploadZone     = document.getElementById("uploadZone");
+const audioContainer = document.getElementById("audioContainer");
+const audioPlayer    = document.getElementById("audioPlayer");
+let currentAudioUrl = null;
+
+audioFileInput.addEventListener("change", () => {
+  if (audioFileInput.files.length) processSelectedFile(audioFileInput.files[0]);
+});
+
+// Drag & drop
+uploadZone.addEventListener("dragover", e => {
+  e.preventDefault();
+  uploadZone.classList.add("drag-over");
+});
+uploadZone.addEventListener("dragleave", () => uploadZone.classList.remove("drag-over"));
+uploadZone.addEventListener("drop", e => {
+  e.preventDefault();
+  uploadZone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file) {
+    audioFileInput.files = e.dataTransfer.files;
+    processSelectedFile(file);
+  }
+});
+
+function isSupportedAudioFile(file) {
+  const name = (file?.name || "").toLowerCase();
+  return name.endsWith(".wav") || name.endsWith(".mp3");
+}
+
+function processSelectedFile(file) {
+  if (!isSupportedAudioFile(file)) {
+    audioFileInput.value = "";
+    audioContainer.style.display = "none";
+    showToast("Only .WAV and .MP3 files are supported");
+    return;
+  }
+
+  showFileInfo(file);
+  showAudioPreview(file);
+}
+
+function showFileInfo(file) {
+  document.getElementById("fileName").textContent = file.name;
+  document.getElementById("fileSize").textContent = formatBytes(file.size);
+}
+
+function showAudioPreview(file) {
+  if (currentAudioUrl) {
+    URL.revokeObjectURL(currentAudioUrl);
+  }
+  currentAudioUrl = URL.createObjectURL(file);
+  audioPlayer.src = currentAudioUrl;
+  audioContainer.style.display = "block";
+}
+
+function clearFile() {
+  audioFileInput.value = "";
+  audioContainer.style.display = "none";
+  audioPlayer.removeAttribute("src");
+  audioPlayer.load();
+  if (currentAudioUrl) {
+    URL.revokeObjectURL(currentAudioUrl);
+    currentAudioUrl = null;
+  }
+  document.getElementById("result").innerHTML = "";
+  setStep(1);
+}
+
+function formatBytes(bytes) {
+  if (bytes < 1024) return bytes + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+/* ─── Step Indicator ─── */
+
+function setStep(n) {
+  [1, 2, 3].forEach(i => {
+    const s = document.getElementById("step" + i);
+    s.classList.remove("active", "done");
+    if (i < n)  s.classList.add("done");
+    if (i === n) s.classList.add("active");
+  });
+  [1, 2].forEach(i => {
+    const l = document.getElementById("line" + i);
+    l.classList.toggle("done", i < n);
+  });
+}
+
+/* ─── Analysis ─── */
+
+function uploadAudio() {
+  const result = document.getElementById("result");
+
+  if (audioFileInput.files.length === 0) {
+    showToast("Please select a .WAV or .MP3 file first");
+    return;
+  }
+
+  if (!isSupportedAudioFile(audioFileInput.files[0])) {
+    showToast("Only .WAV and .MP3 files are supported");
+    return;
+  }
+
+  setStep(2);
+
+  result.innerHTML = `
+    <div class="scanning">
+      <div class="scan-ring">
+        <i class="fas fa-circle-notch fa-spin scan-icon"></i>
+      </div>
+      <p class="scan-text">SCANNING AUDIO PATTERNS</p>
+      <p class="scan-sub">Neural network processing...</p>
+    </div>`;
+
+  const formData = new FormData();
+  formData.append("file", audioFileInput.files[0]);
+
+  fetch("/upload", { method: "POST", body: formData })
+    .then(res => res.json())
+    .then(data => {
+      setStep(3);
+
+      const isFake      = data.prediction === "FAKE";
+      const cls         = isFake ? "fake" : "real";
+      const icon        = isFake ? "fas fa-triangle-exclamation" : "fas fa-circle-check";
+      const label       = isFake ? "DEEPFAKE DETECTED" : "AUTHENTIC AUDIO";
+      const confNum     = parseFloat(data.confidence) || 0;
+      const confDisplay = data.confidence;
+
+      result.innerHTML = `
+        <div class="result-inner">
+          <div class="result-header">
+            <div class="verdict-badge ${cls}">
+              <i class="${icon}"></i>
+              ${label}
+            </div>
+          </div>
+
+          <div class="result-meta">
+            <div class="meta-item">
+              <span class="meta-label"><i class="fas fa-file-audio"></i> File</span>
+              <span class="meta-value">${audioFileInput.files[0].name}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label"><i class="fas fa-tag"></i> Verdict</span>
+              <span class="meta-value verdict-text ${cls}">${data.prediction}</span>
+            </div>
+          </div>
+
+          <div class="confidence-section">
+            <div class="conf-label-row">
+              <span class="conf-label"><i class="fas fa-gauge-high"></i> Confidence Score</span>
+              <span class="conf-value">${confDisplay}</span>
+            </div>
+            <div class="conf-bar-track">
+              <div class="conf-bar-fill ${cls}" style="width: ${confNum}%"></div>
+            </div>
+          </div>
+        </div>`;
+
+      if (activeUser) {
+        AppAuth.addUserHistory(activeUser.uid, {
+          timestamp: new Date().toISOString(),
+          fileName: audioFileInput.files[0].name,
+          prediction: data.prediction,
+          confidence: confDisplay
+        });
+        renderHistory();
+      }
+    })
+    .catch(() => {
+      result.innerHTML = `
+        <div class="result-inner error-card">
+          <i class="fas fa-circle-xmark err-icon"></i>
+          <p class="err-title">Analysis Failed</p>
+          <p class="err-sub">Could not reach the server. Please try again.</p>
+        </div>`;
+    });
+}
+
+function renderHistory() {
+  if (!activeUser) {
+    return;
+  }
+
+  const history = AppAuth.getUserHistory(activeUser.uid);
+  historyBody.innerHTML = "";
+
+  if (!history.length) {
+    historyEmpty.style.display = "block";
+    return;
+  }
+
+  historyEmpty.style.display = "none";
+  history.forEach((item) => {
+    const tr = document.createElement("tr");
+    const verdictClass = item.prediction === "FAKE" ? "tag-fake" : "tag-real";
+    tr.innerHTML = `
+      <td>${new Date(item.timestamp).toLocaleString()}</td>
+      <td>${item.fileName}</td>
+      <td><span class="dash-tag ${verdictClass}">${item.prediction}</span></td>
+      <td>${item.confidence}</td>
+    `;
+    historyBody.appendChild(tr);
+  });
+}
+
+/* ─── Toast ─── */
+
+function showToast(msg) {
+  let t = document.getElementById("toast");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "toast";
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(() => t.classList.remove("show"), 3000);
+}
+
+/* ─── Particle Background ─── */
+
+const canvas = document.createElement("canvas");
+const ctx    = canvas.getContext("2d");
+document.getElementById("background").appendChild(canvas);
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+const particles = Array.from({ length: 70 }, () => ({
+  x:  Math.random() * canvas.width,
+  y:  Math.random() * canvas.height,
+  r:  Math.random() * 2 + 0.5,
+  dx: (Math.random() - 0.5) * 0.5,
+  dy: (Math.random() - 0.5) * 0.5,
+}));
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,200,255,0.55)";
+    ctx.fill();
+    p.x += p.dx;
+    p.y += p.dy;
+    if (p.x < 0 || p.x > canvas.width)  p.dx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+  });
+
+  // Draw connection lines
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx   = particles[i].x - particles[j].x;
+      const dy   = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 110) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,200,255,${0.12 * (1 - dist / 110)})`;
+        ctx.lineWidth   = 0.6;
+        ctx.stroke();
+      }
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+animate();
+
+</script>
+
+</body>
+</html>

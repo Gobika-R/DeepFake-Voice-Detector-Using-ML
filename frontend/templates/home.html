@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DetectAI — Deepfake Audio Detection System</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script id="firebase-config" type="application/json">{{ firebase_config | tojson }}</script>
+  <script>
+    window.FIREBASE_CONFIG = JSON.parse(document.getElementById("firebase-config").textContent);
+  </script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</head>
+
+<body>
+
+<div id="background"></div>
+
+<!-- ═══ TOP NAV ═══ -->
+<header class="topbar">
+  <div class="topbar-left">
+    <a href="/" class="logo-link">
+      <div class="logo-icon">
+        <i class="fas fa-shield-halved"></i>
+      </div>
+      <div class="logo-text">
+        <span class="logo-main">DETECT<span class="logo-accent">AI</span></span>
+        <span class="logo-sub">Audio Forensics System</span>
+      </div>
+    </a>
+  </div>
+  <div class="topbar-right">
+    <a href="/login" class="nav-pill">Login</a>
+    <a href="/detector" class="nav-pill">Detector</a>
+    <div class="status-dot"></div>
+    <span class="status-text">HOME MODE</span>
+  </div>
+</header>
+
+<!-- ═══ MAIN ═══ -->
+<main class="home-wrapper">
+
+  <!-- HERO SECTION -->
+  <section class="hero-home">
+    <div class="hero-content">
+      <h1 class="hero-title-large">Deepfake Audio <span class="highlight">Detection</span></h1>
+      <p class="hero-description">
+        Advanced AI-powered forensic analysis to identify synthetic, manipulated, and deepfake audio with unprecedented accuracy. Protect yourself from audio misinformation.
+      </p>
+      <div class="hero-buttons">
+        <a href="/detector" class="btn-primary">
+          <i class="fas fa-magnifying-glass-chart"></i>
+          Start Detection
+        </a>
+        <a href="#features" class="btn-secondary">
+          <i class="fas fa-circle-info"></i>
+          Learn More
+        </a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="audio-visual">
+        <div class="wave"></div>
+        <div class="wave"></div>
+        <div class="wave"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS SECTION -->
+  <section class="stats-section">
+    <div class="stat-card">
+      <div class="stat-number">97.4%</div>
+      <div class="stat-label">Accuracy Rate</div>
+      <div class="stat-icon"><i class="fas fa-bullseye"></i></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">&lt; 2s</div>
+      <div class="stat-label">Analysis Speed</div>
+      <div class="stat-icon"><i class="fas fa-bolt"></i></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">Neural</div>
+      <div class="stat-label">Detection Tech</div>
+      <div class="stat-icon"><i class="fas fa-brain"></i></div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">∞</div>
+      <div class="stat-label">Free to Use</div>
+      <div class="stat-icon"><i class="fas fa-crown"></i></div>
+    </div>
+  </section>
+
+  <!-- FEATURES SECTION -->
+  <section class="features-section" id="features">
+    <h2 class="section-title">How It Works</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-cloud-arrow-up"></i>
+        </div>
+        <h3 class="feature-title">Upload Audio</h3>
+        <p class="feature-desc">Support for WAV and MP3 formats up to 50 MB. Drag and drop or browse your files.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-microchip"></i>
+        </div>
+        <h3 class="feature-title">AI Analysis</h3>
+        <p class="feature-desc">Advanced neural networks analyze audio patterns, frequency, and voice characteristics.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">
+          <i class="fas fa-chart-bar"></i>
+        </div>
+        <h3 class="feature-title">Instant Results</h3>
+        <p class="feature-desc">Get detailed results in seconds with confidence scores and forensic insights.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CAPABILITIES SECTION -->
+  <section class="capabilities-section">
+    <h2 class="section-title">Detection Capabilities</h2>
+    <div class="capabilities-list">
+      <div class="capability-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Identifies synthetic voice generation (TTS, voice cloning)</span>
+      </div>
+      <div class="capability-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Detects audio splicing and concatenation artifacts</span>
+      </div>
+      <div class="capability-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Analyzes AI-powered voice manipulation techniques</span>
+      </div>
+      <div class="capability-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Provides confidence scoring for each analysis</span>
+      </div>
+      <div class="capability-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Processes multiple audio formats seamlessly</span>
+      </div>
+      <div class="capability-item">
+        <i class="fas fa-check-circle"></i>
+        <span>Privacy-first: Audio files never stored or shared</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA SECTION -->
+  <section class="cta-section">
+    <div class="cta-content">
+      <h2>Ready to Check Your Audio?</h2>
+      <p>Experience the power of AI-driven deepfake detection</p>
+      <button class="btn-large" onclick="window.location.href='/detector'">
+        <i class="fas fa-play"></i>
+        Launch Detector Now
+      </button>
+    </div>
+  </section>
+
+</main>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <i class="fas fa-lock"></i>&nbsp; Secure &amp; Private — Audio files are never stored
+</footer>
+
+<style>
+  .home-wrapper {
+    padding-top: 80px;
+  }
+
+  /* Hero Home Section */
+  .hero-home {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    z-index: 2;
+    position: relative;
+  }
+
+  .hero-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .hero-title-large {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 900;
+    line-height: 1.2;
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hero-description {
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 1.2rem;
+    color: rgba(200, 215, 230, 0.9);
+    line-height: 1.7;
+  }
+
+  .hero-buttons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary, .btn-secondary {
+    padding: 1rem 2rem;
+    border-radius: 0.5rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    font-size: 1rem;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    color: #0a1a2e;
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.5);
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(0, 200, 255, 0.8);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    border: 2px solid #00c8ff;
+    color: #00c8ff;
+  }
+
+  .btn-secondary:hover {
+    background: rgba(0, 200, 255, 0.1);
+    border-color: #00ff88;
+    color: #00ff88;
+  }
+
+  .btn-large {
+    padding: 1.5rem 3rem;
+    font-size: 1.2rem;
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    color: #0a1a2e;
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.5);
+    border: none;
+    border-radius: 0.5rem;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+
+  .btn-large:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 30px rgba(0, 200, 255, 0.8);
+  }
+
+  /* Audio Visual */
+  .audio-visual {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.8rem;
+    height: 200px;
+  }
+
+  .wave {
+    width: 3px;
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    border-radius: 3px;
+    animation: wave 1s ease-in-out infinite;
+    height: 40%;
+  }
+
+  .wave:nth-child(2) {
+    animation-delay: 0.1s;
+    height: 80%;
+  }
+
+  .wave:nth-child(3) {
+    animation-delay: 0.2s;
+    height: 60%;
+  }
+
+  @keyframes wave {
+    0%, 100% { height: 40%; }
+    50% { height: 100%; }
+  }
+
+  /* Stats Section */
+  .stats-section {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+    z-index: 2;
+    position: relative;
+  }
+
+  .stat-card {
+    background: rgba(15, 32, 56, 0.5);
+    border: 1px solid rgba(0, 200, 255, 0.3);
+    padding: 2rem;
+    border-radius: 0.8rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    position: relative;
+  }
+
+  .stat-card:hover {
+    border-color: #00c8ff;
+    background: rgba(15, 32, 56, 0.8);
+    transform: translateY(-5px);
+  }
+
+  .stat-number {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-family: 'Rajdhani', sans-serif;
+    color: rgba(200, 215, 230, 0.8);
+    font-size: 0.95rem;
+  }
+
+  .stat-icon {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    color: rgba(0, 200, 255, 0.3);
+  }
+
+  /* Features Section */
+  .features-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    z-index: 2;
+    position: relative;
+  }
+
+  .section-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2.5rem;
+    font-weight: 900;
+    text-align: center;
+    margin-bottom: 3rem;
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+  }
+
+  .feature-card {
+    background: rgba(15, 32, 56, 0.5);
+    border: 1px solid rgba(0, 200, 255, 0.2);
+    padding: 2rem;
+    border-radius: 0.8rem;
+    text-align: center;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+  }
+
+  .feature-card:hover {
+    border-color: #00c8ff;
+    background: rgba(15, 32, 56, 0.8);
+    transform: translateY(-5px);
+  }
+
+  .feature-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .feature-title {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.8rem;
+    color: #c8d7e6;
+  }
+
+  .feature-desc {
+    font-family: 'Rajdhani', sans-serif;
+    color: rgba(200, 215, 230, 0.7);
+    line-height: 1.6;
+    font-size: 0.95rem;
+  }
+
+  /* Capabilities Section */
+  .capabilities-section {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    z-index: 2;
+    position: relative;
+  }
+
+  .capabilities-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .capability-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    padding: 1.5rem;
+    background: rgba(15, 32, 56, 0.4);
+    border-left: 3px solid #00c8ff;
+    border-radius: 0.4rem;
+    transition: all 0.3s ease;
+  }
+
+  .capability-item:hover {
+    background: rgba(15, 32, 56, 0.7);
+    border-left-color: #00ff88;
+    transform: translateX(5px);
+  }
+
+  .capability-item i {
+    color: #00c8ff;
+    margin-top: 0.3rem;
+    flex-shrink: 0;
+  }
+
+  .capability-item span {
+    font-family: 'Rajdhani', sans-serif;
+    color: rgba(200, 215, 230, 0.9);
+    line-height: 1.5;
+  }
+
+  /* CTA Section */
+  .cta-section {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 4rem 2rem;
+    text-align: center;
+    z-index: 2;
+    position: relative;
+  }
+
+  .cta-content {
+    background: rgba(15, 32, 56, 0.6);
+    border: 2px solid rgba(0, 200, 255, 0.3);
+    padding: 3rem;
+    border-radius: 1rem;
+    backdrop-filter: blur(10px);
+  }
+
+  .cta-content h2 {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #00c8ff 0%, #00ff88 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .cta-content p {
+    font-family: 'Rajdhani', sans-serif;
+    color: rgba(200, 215, 230, 0.8);
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero-home {
+      grid-template-columns: 1fr;
+      padding: 2rem 1rem;
+    }
+
+    .hero-title-large {
+      font-size: 2rem;
+    }
+
+    .hero-description {
+      font-size: 1rem;
+    }
+
+    .btn-primary, .btn-secondary {
+      width: 100%;
+      justify-content: center;
+    }
+
+    .section-title {
+      font-size: 1.8rem;
+    }
+  }
+</style>
+
+<script>
+/* Returning to home page should terminate active profile session. */
+if (window.AppAuth && AppAuth.hasFirebaseConfig()) {
+  AppAuth.signOut();
+}
+
+/* ─── Particle Background ─── */
+
+const canvas = document.createElement("canvas");
+const ctx    = canvas.getContext("2d");
+document.getElementById("background").appendChild(canvas);
+
+function resize() {
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener("resize", resize);
+
+const particles = Array.from({ length: 70 }, () => ({
+  x:  Math.random() * canvas.width,
+  y:  Math.random() * canvas.height,
+  r:  Math.random() * 2 + 0.5,
+  dx: (Math.random() - 0.5) * 0.5,
+  dy: (Math.random() - 0.5) * 0.5,
+}));
+
+function animate() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(0,200,255,0.55)";
+    ctx.fill();
+    p.x += p.dx;
+    p.y += p.dy;
+    if (p.x < 0 || p.x > canvas.width)  p.dx *= -1;
+    if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+  });
+
+  // Draw connection lines
+  for (let i = 0; i < particles.length; i++) {
+    for (let j = i + 1; j < particles.length; j++) {
+      const dx   = particles[i].x - particles[j].x;
+      const dy   = particles[i].y - particles[j].y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < 110) {
+        ctx.beginPath();
+        ctx.moveTo(particles[i].x, particles[i].y);
+        ctx.lineTo(particles[j].x, particles[j].y);
+        ctx.strokeStyle = `rgba(0,200,255,${0.12 * (1 - dist / 110)})`;
+        ctx.lineWidth   = 0.6;
+        ctx.stroke();
+      }
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+
+</body>
+</html>

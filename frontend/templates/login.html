@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DetectAI - Sign In</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.0/firebase-auth-compat.js"></script>
+  <script id="firebase-config" type="application/json">{{ firebase_config | tojson }}</script>
+  <script>
+    window.FIREBASE_CONFIG = JSON.parse(document.getElementById("firebase-config").textContent);
+  </script>
+  <script src="{{ url_for('static', filename='auth.js') }}"></script>
+</head>
+<body>
+  <div id="background"></div>
+
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="/" class="logo-link">
+        <div class="logo-icon">
+          <i class="fas fa-shield-halved"></i>
+        </div>
+        <div class="logo-text">
+          <span class="logo-main">DETECT<span class="logo-accent">AI</span></span>
+          <span class="logo-sub">Audio Forensics System</span>
+        </div>
+      </a>
+    </div>
+    <div class="topbar-right">
+      <a href="/" class="nav-pill">Home</a>
+      <a href="/detector" class="nav-pill">Detector</a>
+    </div>
+  </header>
+
+  <main class="main-wrapper auth-page-wrapper">
+    <section class="auth-card" id="authCard">
+      <h1 class="auth-title">Sign In To Continue</h1>
+      <p class="auth-subtitle">Use your account to access your private analysis dashboard.</p>
+
+      <div class="auth-toggle-row">
+        <button class="auth-toggle active" id="signinModeBtn" type="button">Sign In</button>
+        <button class="auth-toggle" id="signupModeBtn" type="button">Create Account</button>
+      </div>
+
+      <form id="authForm" class="auth-form">
+        <label class="auth-label" for="email">Email</label>
+        <input class="auth-input" id="email" type="email" required placeholder="you@example.com">
+
+        <label class="auth-label" for="password">Password</label>
+        <input class="auth-input" id="password" type="password" minlength="6" required placeholder="At least 6 characters">
+
+        <button type="submit" class="analyze-btn auth-submit-btn" id="emailAuthBtn">
+          <i class="fas fa-right-to-bracket"></i>
+          <span>Sign In</span>
+        </button>
+      </form>
+
+      <div class="auth-divider">
+        <span>or</span>
+      </div>
+
+      <button type="button" class="google-btn" id="googleBtn">
+        <i class="fab fa-google"></i>
+        <span>Continue with Google</span>
+      </button>
+
+      <p class="auth-message" id="authMessage"></p>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <i class="fas fa-lock"></i>&nbsp; Secure &amp; Private - Session ends when browser is closed
+  </footer>
+
+  <script>
+    const authMessage = document.getElementById("authMessage");
+    const authForm = document.getElementById("authForm");
+    const signinModeBtn = document.getElementById("signinModeBtn");
+    const signupModeBtn = document.getElementById("signupModeBtn");
+    const emailAuthBtn = document.getElementById("emailAuthBtn");
+    const googleBtn = document.getElementById("googleBtn");
+
+    let mode = "signin";
+
+    function setMode(nextMode) {
+      mode = nextMode;
+      const signup = mode === "signup";
+      signinModeBtn.classList.toggle("active", !signup);
+      signupModeBtn.classList.toggle("active", signup);
+      emailAuthBtn.innerHTML = signup
+        ? '<i class="fas fa-user-plus"></i><span>Create Account</span>'
+        : '<i class="fas fa-right-to-bracket"></i><span>Sign In</span>';
+      authMessage.textContent = "";
+    }
+
+    function showAuthMessage(message, isError) {
+      authMessage.textContent = message;
+      authMessage.classList.toggle("error", Boolean(isError));
+      authMessage.classList.toggle("success", !isError && message.length > 0);
+    }
+
+    function normalizeAuthError(err) {
+      const code = err && err.code ? err.code : "";
+      if (code.includes("auth/invalid-credential") || code.includes("auth/wrong-password") || code.includes("auth/user-not-found")) {
+        return "Invalid email or password.";
+      }
+      if (code.includes("auth/email-already-in-use")) {
+        return "This email is already registered. Try signing in instead.";
+      }
+      if (code.includes("auth/popup-closed-by-user")) {
+        return "Google sign-in was cancelled.";
+      }
+      return err && err.message ? err.message : "Authentication failed. Please try again.";
+    }
+
+    signinModeBtn.addEventListener("click", () => setMode("signin"));
+    signupModeBtn.addEventListener("click", () => setMode("signup"));
+
+    authForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      showAuthMessage("", false);
+
+      if (!AppAuth.hasFirebaseConfig()) {
+        AppAuth.showConfigWarning("authCard");
+        return;
+      }
+
+      const email = document.getElementById("email").value.trim();
+      const password = document.getElementById("password").value;
+
+      try {
+        if (mode === "signup") {
+          await AppAuth.signUpWithEmail(email, password);
+          showAuthMessage("Account created. Redirecting...", false);
+        } else {
+          await AppAuth.signInWithEmail(email, password);
+          showAuthMessage("Sign in successful. Redirecting...", false);
+        }
+        window.location.href = "/detector";
+      } catch (err) {
+        showAuthMessage(normalizeAuthError(err), true);
+      }
+    });
+
+    googleBtn.addEventListener("click", async () => {
+      showAuthMessage("", false);
+
+      if (!AppAuth.hasFirebaseConfig()) {
+        AppAuth.showConfigWarning("authCard");
+        return;
+      }
+
+      try {
+        await AppAuth.signInWithGoogle();
+        window.location.href = "/detector";
+      } catch (err) {
+        showAuthMessage(normalizeAuthError(err), true);
+      }
+    });
+
+    AppAuth.onAuthStateChange((user) => {
+      if (user) {
+        window.location.href = "/detector";
+      }
+    });
+
+    setMode("signin");
+
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    document.getElementById("background").appendChild(canvas);
+
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 2 + 0.5,
+      dx: (Math.random() - 0.5) * 0.45,
+      dy: (Math.random() - 0.5) * 0.45
+    }));
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      particles.forEach((p) => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(0, 200, 255, 0.55)";
+        ctx.fill();
+        p.x += p.dx;
+        p.y += p.dy;
+        if (p.x < 0 || p.x > canvas.width) p.dx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.dy *= -1;
+      });
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
