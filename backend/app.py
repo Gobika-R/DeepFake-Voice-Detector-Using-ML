@@ -1,12 +1,14 @@
 from flask import Flask, request, jsonify, render_template
 import os
+import uuid
+from werkzeug.utils import secure_filename
 
 try:
-    from predict import predict_audio
+    from predict import predict_audio, get_model
 except ModuleNotFoundError as exc:
     if exc.name != "predict":
         raise
-    from backend.predict import predict_audio
+    from backend.predict import predict_audio, get_model
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -15,6 +17,7 @@ app = Flask(
     template_folder=os.path.join(BASE_DIR, "..", "frontend", "templates"),
     static_folder=os.path.join(BASE_DIR, "..", "frontend", "static")
 )
+app.config["MAX_CONTENT_LENGTH"] = 50 * 1024 * 1024
 
 ALLOWED_EXTENSIONS = {"wav", "mp3"}
 
@@ -23,6 +26,23 @@ def allowed_file(filename):
 
 UPLOAD_FOLDER = os.path.join(BASE_DIR, "uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+
+@app.errorhandler(413)
+def file_too_large(_error):
+    return jsonify({"error": "File too large. Max allowed size is 50MB."}), 413
+
+
+@app.before_request
+def warm_model_once():
+    if getattr(app, "_model_warmed", False):
+        return
+    try:
+        get_model()
+        app._model_warmed = True
+    except Exception:
+        # Keep app running; /upload will return a clear error if model is unavailable.
+        pass
 
 
 def get_firebase_config():
@@ -71,13 +91,21 @@ def upload_audio():
     if not allowed_file(file.filename):
         return jsonify({"error": "Only WAV and MP3 supported"}), 400
 
-    file_path = os.path.join(UPLOAD_FOLDER, file.filename)
+    original_name = secure_filename(file.filename)
+    unique_name = f"{uuid.uuid4().hex}_{original_name}"
+    file_path = os.path.join(UPLOAD_FOLDER, unique_name)
     file.save(file_path)
 
     try:
         label, confidence = predict_audio(file_path)
     except Exception as exc:
         return jsonify({"error": f"Prediction failed: {str(exc)}"}), 500
+    finally:
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+        except OSError:
+            pass
 
     return jsonify({
         "prediction": label,

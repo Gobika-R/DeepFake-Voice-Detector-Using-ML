@@ -322,7 +322,14 @@ function uploadAudio() {
   formData.append("file", audioFileInput.files[0]);
 
   fetch("/upload", { method: "POST", body: formData })
-    .then(res => res.json())
+    .then(async (res) => {
+      const payload = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const message = payload.error || `Server error (${res.status})`;
+        throw new Error(message);
+      }
+      return payload;
+    })
     .then(data => {
       setStep(3);
 
@@ -374,12 +381,12 @@ function uploadAudio() {
         renderHistory();
       }
     })
-    .catch(() => {
+    .catch((err) => {
       result.innerHTML = `
         <div class="result-inner error-card">
           <i class="fas fa-circle-xmark err-icon"></i>
           <p class="err-title">Analysis Failed</p>
-          <p class="err-sub">Could not reach the server. Please try again.</p>
+          <p class="err-sub">${err && err.message ? err.message : "Could not reach the server. Please try again."}</p>
         </div>`;
     });
 }

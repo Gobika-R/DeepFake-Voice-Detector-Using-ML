@@ -11,10 +11,14 @@ model = None
 def get_model():
     global model
     if model is None:
+        if not os.path.exists(MODEL_PATH):
+            raise FileNotFoundError(f"Model not found at {MODEL_PATH}")
         model = joblib.load(MODEL_PATH)
     return model
 
 def extract_mfcc(file_path, n_mfcc=40):
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Audio file not found: {file_path}")
     audio, sr = librosa.load(file_path, sr=None)
     mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=n_mfcc)
     mfcc_mean = np.mean(mfcc.T, axis=0)
