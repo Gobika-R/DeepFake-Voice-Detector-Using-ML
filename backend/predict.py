@@ -3,6 +3,13 @@ import numpy as np
 import joblib
 import os
 
+try:
+    from preprocessing.audio_preprocess import preprocess_audio
+except ModuleNotFoundError as exc:
+    if exc.name != "preprocessing":
+        raise
+    from backend.preprocessing.audio_preprocess import preprocess_audio
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_PATH = os.path.join(BASE_DIR, "models", "deepfake_audio_model.pkl")
 model = None
@@ -19,7 +26,11 @@ def get_model():
 def extract_mfcc(file_path, n_mfcc=40):
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"Audio file not found: {file_path}")
-    audio, sr = librosa.load(file_path, sr=None)
+
+    # Keep inference bounded and consistent on cloud instances.
+    sr = 16000
+    audio = preprocess_audio(file_path, target_sr=sr, duration=3)
+
     mfcc = librosa.feature.mfcc(y=audio, sr=sr, n_mfcc=n_mfcc)
     mfcc_mean = np.mean(mfcc.T, axis=0)
     return mfcc_mean.reshape(1, -1)

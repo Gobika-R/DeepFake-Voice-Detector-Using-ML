@@ -16,8 +16,10 @@ def preprocess_audio(file_path, target_sr=16000, duration=3):
     # Trim silence
     audio, _ = librosa.effects.trim(audio)
 
-    # Normalize
-    audio = audio / np.max(np.abs(audio))
+    # Normalize safely (avoid division by zero on near-silent clips)
+    peak = np.max(np.abs(audio))
+    if peak > 0:
+        audio = audio / peak
 
     # Fix length (padding or truncating)
     max_length = target_sr * duration
